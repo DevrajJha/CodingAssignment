@@ -13,15 +13,27 @@ class NetworkInterceptor(val context:Context): Interceptor {
         val request = chain.request()
         if (ConnectivityStatus.isConnected(context)) {
             request.newBuilder()
-                .header("Cache-Control", "public, max-age=" + 60)
                 .build()
 
         } else {
-            request.newBuilder()
-                .header("Cache-Control", "public, only-if-cached, max-stale=" + 60 * 60 * 24 * 7)
+            request.newBuilder() .removeHeader("Pragma")
+                .header(
+                    "Cache-Control",
+                    String.format("max-age=%d", 60))
                 .build()
+
         }
 
         return chain.proceed(request)
+    }
+    private val REWRITE_CACHE_CONTROL_INTERCEPTOR = Interceptor { chain ->
+        val originalResponse = chain.proceed(chain.request())
+        originalResponse.newBuilder()
+            .removeHeader("Pragma")
+            .header(
+                "Cache-Control",
+                String.format("max-age=%d", 60)
+            )
+            .build()
     }
 }
