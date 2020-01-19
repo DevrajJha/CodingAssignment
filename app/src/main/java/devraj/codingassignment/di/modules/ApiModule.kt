@@ -3,6 +3,7 @@ package devraj.codingassignment.di.modules
 import android.app.Application
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.ncornette.cache.OkCacheControl
 import dagger.Module
 import dagger.Provides
 import devraj.codingassignment.AppConstants
@@ -44,6 +45,7 @@ import javax.inject.Singleton
         return NetworkInterceptor(application.applicationContext)
     }
 
+
     @Provides
     @Singleton
     internal fun provideOkhttpClient(
@@ -52,13 +54,11 @@ import javax.inject.Singleton
     ): OkHttpClient {
         val logging = HttpLoggingInterceptor()
         logging.level = HttpLoggingInterceptor.Level.BODY
-
-        val httpClient = OkHttpClient.Builder()
-        httpClient.cache(cache)
-        httpClient.addInterceptor(networkInterceptor)
-        httpClient.addInterceptor(logging)
-        httpClient.connectTimeout(30, TimeUnit.SECONDS)
-        httpClient.readTimeout(30, TimeUnit.SECONDS)
+        val httpClient =  OkCacheControl.on(OkHttpClient.Builder())
+            .overrideServerCachePolicy(30, TimeUnit.DAYS)
+            .forceCacheWhenOffline(networkInterceptor)
+            .apply() // return to the OkHttpClient.Builder instance
+            .cache(cache)
         return httpClient.build()
     }
 
